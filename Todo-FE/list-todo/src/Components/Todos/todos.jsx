@@ -1,8 +1,10 @@
-import { useEffect, useState } from "react";
-import { addTodosAPI, delTodosAPI, getTodosAPI } from "../../Services/todos";
+import { useEffect, useRef, useState } from "react";
+import { addTodosAPI, delTodosAPI, editTodosAPI, getTodosAPI } from "../../Services/todos";
 
 const Todos = () => {
   const [todos, setTodos] = useState([]);
+  const [textBtn,setTextBtn] = useState("them moi");
+  const todoRef =useRef([]);
 
   useEffect(() => {
     fetchData();
@@ -27,11 +29,52 @@ const Todos = () => {
     console.log({val,id});
     if(id){
       //update
+      await editTodosAPI({
+        name:val,
+        id:id
+      });
     }else 
     //new
     await addTodosAPI({
-      name:val
+      name:val,
     });
+    window.location.reload();
+
+    event.target[0].value ="";
+    event.target[1].value = null;
+    todoRef.current[id].className ="fas fa-edit";
+    
+  }
+  const editTodo = (id) => {
+    todoRef.current.forEach((item) => {
+      if (item?.getAttribute("data-id") && item.getAttribute("data-id") !== String(id)) {
+        item.className = "fas fa-edit";
+      }
+    });
+  
+    const inputName = document.getElementById("name");
+    const inputId = document.getElementById("id");
+  
+    if (todoRef.current[id] && todoRef.current[id].className === "fas fa-edit") {
+      todoRef.current[id].className = "fas fa-user-edit";
+      setTextBtn("Cập nhật");
+      inputName.value = todoRef.current[id].getAttribute("data-name");
+      inputId.value = id;
+    } else if (todoRef.current[id] && todoRef.current[id].className === "fas fa-user-edit") {
+      todoRef.current[id].className = "fas fa-edit";
+      inputName.value = "";
+      inputId.value = null;
+      setTextBtn("Thêm mới");
+    }
+  };
+  
+ 
+  const onIsCompleteTodo = async(todo)=>{
+    await editTodosAPI({
+      ...todo,
+      isComplete:true
+    });
+    fetchData();
   }
 
   return (
@@ -42,11 +85,19 @@ const Todos = () => {
       </h1>
       {todos && todos.length > 0 ? (
         todos.map((item, key) => (
-          <li key={key} className={item.isComplete ? "done" : ""}>
+          <li key={key} className={item.isComplete ? "done" : ""} onDoubleClick={() => onIsCompleteTodo(item)}>
             <span className="label">{item.name}</span>
             <div className="actions">
-              <button className="btn-picto" type="button">
-                <i className="fas fa-edit" />
+              <button onClick={()=>editTodo(item.id)}
+              className="btn-picto" 
+              type="button">
+                <i
+                 className="fas fa-edit" 
+                 ref={el => todoRef.current[item.id] = el}
+                 data-name ={item.name}
+                 data-id={item.id}
+
+                 />
               </button>
               <button
                 className="btn-picto"
@@ -66,8 +117,8 @@ const Todos = () => {
       <form onSubmit={AddOrEditTodo}>
         <label>Thêm nhiệm vụ mới</label>
         <input type="text" name="name" id="name" />
-        <input type="text" name="id" id="id" />
-        <button type="submit">Thêm mới</button>
+        <input type="text" name="id" id="id" style={{display:"none"}}/>
+        <button type="submit">{textBtn}</button>
       </form>
     </main>
   );

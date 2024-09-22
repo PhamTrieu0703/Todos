@@ -15,3 +15,7 @@ export const delTodosAPI = (id) => {
 export const addTodosAPI = (todo) => {
     return TodosService.post(`${END_POINT.TODOS}`,todo);
 }
+
+export const editTodosAPI = (todo) => {
+    return TodosService.put(`${END_POINT.TODOS}`,todo);
+}
